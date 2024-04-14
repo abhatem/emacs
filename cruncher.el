@@ -1,7 +1,7 @@
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'c++-mode-hook 'lsp)
 ;; cmake font lock
-(use-package cmake-font-lock :straight t :ensure t)
+;; (use-package cmake-font-lock :straight t :ensure t)
 ;;for dap configuration https://emacs-lsp.github.io/dap-mode/page/configuration/
 ;; (use-package dap-cpptools :straight t :ensure t)
 
