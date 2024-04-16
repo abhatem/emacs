@@ -224,17 +224,23 @@
 ;;     :ensure t
 ;;     :config
 ;;     (bash-completion-setup))
-(require 'bash-completion)
-(bash-completion-setup)
+;; (require 'bash-completion)
+;; (bash-completion-setup)
 ;; (autoload 'bash-completion-dynamic-complete
 ;;     "bash-completion"
 ;;     "BASH completion hook")
 ;; (add-hook 'shell-dynamic-complete-functions
 ;;     'bash-completion-dynamic-complete)
+(use-package bash-completion
+	:straight t
+    :ensure t
+    :config
+    (bash-completion-setup))
 (add-hook 'eshell-mode-hook
     (lambda ()
         (add-hook 'completion-at-point-functions
             'bash-completion-capf-nonexclusive nil t)))
+
 
 
 (defun my/thesis()

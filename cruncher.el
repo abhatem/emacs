@@ -5,6 +5,8 @@
 ;;for dap configuration https://emacs-lsp.github.io/dap-mode/page/configuration/
 ;; (use-package dap-cpptools :straight t :ensure t)
 
+(setq tab-width 4)
+
 (defun my/format-buffer-if-lsp-active ()
   "Formats the current buffer with lsp-format-buffer if lsp-mode is active."
   (when (and (bound-and-true-p lsp-mode) (functionp 'lsp-format-buffer))
