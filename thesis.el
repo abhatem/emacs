@@ -26,6 +26,10 @@
 (setq csharp-ts-mode-indent-level 4)
 (setq tab-width 4)
 (setq c-basic-offset 4)
+(setq c-default-style "linux")
+
+;; javascript indent width
+
 
 (defun my/format-buffer-if-lsp-active ()
 	"Formats the current buffer with lsp-format-buffer if lsp-mode is active."

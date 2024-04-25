@@ -57,6 +57,8 @@
 (use-package treemacs-projectile :straight t :ensure t)
 (treemacs-git-mode 'deferred)
 
+(use-package rust-mode :straight t :ensure t)
+
 (use-package lsp-mode
     :straight t
     :init
@@ -72,6 +74,12 @@
 
               ;; if you want which-key integration
               (lsp-mode . lsp-enable-which-key-integration))
+
+    :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+			  (rust-mode . lsp)
+
+			  ;; if you want which-key integration
+			  (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp
     :bind-keymap
     ("C-c l" . lsp-command-map)
@@ -108,6 +116,11 @@
     company-idle-delay 0.0
     company-minimum-prefix-length 1
     lsp-idle-delay 0.1)  ;; clangd is fast
+
+;; magit stuff
+(use-package magit :straight t :ensure t
+    :bind ("C-x g" . magit-status))
+
 
 (with-eval-after-load 'lsp-mode
     (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
@@ -160,7 +173,11 @@
 (use-package vc-msg
     :straight (vc-msg :type git :host github :repo "redguardtoo/vc-msg"))
 
-
+;; docker stuff
+(use-package dockerfile-mode :straight t :ensure t)
+(use-package docker :straight t :ensure t)
+;; docker-compose stuff
+(use-package docker-compose-mode :straight t :ensure t)
 
 
 (require 'package)
@@ -204,7 +221,6 @@
 (when (display-graphic-p)
     (use-package helm-icons :straight t :ensure t)
     (helm-icons-enable)
-    (desktop-save-mode 1)
     )
 ;; (use-package all-the-icons
 ;; 	:straight t

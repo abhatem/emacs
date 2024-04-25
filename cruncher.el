@@ -13,5 +13,6 @@
 (add-hook 'before-save-hook 'my/format-buffer-if-lsp-active)
 
 
+
 (treemacs-do-switch-workspace "cruncher")
 (treemacs)
