@@ -59,13 +59,17 @@
 
 (use-package rust-mode :straight t :ensure t)
 
+;; flycheck stuff
+(use-package flycheck :straight t :ensure t
+    :init (global-flycheck-mode))
+
 (use-package lsp-mode
     :straight t
     :init
     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
     (setq lsp-keymap-prefix "C-c l")
     :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-              (python-mode . lsp)
+              ;; (python-mode . lsp)
 
               ;; if you want which-key integration
               (lsp-mode . lsp-enable-which-key-integration))
@@ -76,10 +80,10 @@
               (lsp-mode . lsp-enable-which-key-integration))
 
     :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-			  (rust-mode . lsp)
+	      (rust-mode . lsp)
 
-			  ;; if you want which-key integration
-			  (lsp-mode . lsp-enable-which-key-integration))
+	      ;; if you want which-key integration
+	      (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp
     :bind-keymap
     ("C-c l" . lsp-command-map)
@@ -92,6 +96,14 @@
 (use-package helm-lsp :straight t :commands helm-lsp-workspace-symbol)
 ;; (define-key lsp-mode-map [remap xref-find-apropos] #'helm-lsp-workspace-symbol)
 
+(use-package lsp-pyright
+    :straight t
+    :ensure t
+    :hook (python-mode . (lambda ()
+                             (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
+
+
 ;; ;; if you are ivy user
 ;; (use-package lsp-ivy :straight t :commands lsp-ivy-workspace-symbol)
 (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
@@ -99,6 +111,37 @@
 ;; optionally if you want to use debugger
 (use-package dap-mode :straight t)
 ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+
+;; lsp-python-ms
+;; (use-package lsp-python-ms
+;;     :straight t
+;;     :ensure t
+;;     :hook (python-mode . (lambda ()
+;; 			     (require 'lsp-python-ms)
+;; 			     (lsp)))
+;;     :config
+;;     (setq lsp-python-ms-auto-install-server t)
+;;     (setq ls-python-ms-executable (executable-find "python-language-server"))
+;;     )
+;; (setq lsp-python-ms-dir "/home/abhatem/.emacs.d/straight/build/lsp-python-ms/mspyls")
+;; (setq lsp-python-ms-executable "/home/abhatem/.emacs.d/straight/build/lsp-python-ms/mspyls/Microsoft.Python.LanguageServer")
+;; (setq lsp-python-ms-extra-paths '("/home/abhatem/.emacs.d/straight/build/lsp-python-ms/mspyls"))
+;; (setq lsp-python-ms-python-executable-cmd "python3")
+;; (setq lsp-python-ms-python-executable-cmd))
+
+;; debugging python
+(use-package dap-mode
+    :after lsp-mode
+    :commands dap-debug
+    :hook ((python-mode . dap-ui-mode) (python-mode . dap-mode))
+    :config
+    (require 'dap-python)
+    (setq dap-python-debugger 'debugpy)
+    (defun dap-python--pyenv-executable-find (command)
+	(with-venv (executable-find "python")))
+
+    (add-hook 'dap-stopped-hook
+        (lambda (arg) (call-interactively #'dap-hydra))))
 
 
 ;; optional if you want which-key integration
@@ -206,6 +249,15 @@
 
 
 (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name)))
+(setq dashboard-items '((recents   . 5)
+                        (bookmarks . 5)
+                        (projects  . 10)
+                        (agenda    . 5)
+                           (registers . 5)))
+
+(setq dashboard-display-icons-p t)     ; display icons on both GUI and terminal
+(setq dashboard-icon-type 'nerd-icons) ; use `nerd-icons' package
+
 
 
 
@@ -214,7 +266,9 @@
 	(company-mode)))
 
 ;; indent 4 spaces width (to avoid erros)
-(setq lisp-indent-offset 4) 
+(setq lisp-indent-offset 4)
+;; c indent 4 spaces width
+(setq c-basic-offset 4)
 
 
 ;; helm icons
@@ -253,10 +307,16 @@
     )
 
 (defun my/cruncher ()
-	"load up cruncher stuff"
-	(interactive)
-	(load-file "~/emacs/cruncher.el")
-	)
+    "load up cruncher stuff"
+    (interactive)
+    (load-file "~/emacs/cruncher.el")
+    )
+
+(defun my/abhatem ()
+    "load up blog stuff"
+    (interactive)
+    (load-file "~/emacs/abhatem.el")
+    )
 
 ;; open dot file
 (defun my/open-init ()
@@ -265,5 +325,22 @@
     (find-file "~/.emacs")
     )
 
-(server-start)
 (windmove-default-keybindings)
+
+;; read .dir-locals.el from parent directories
+;; (defun apply-dir-locals-from-parent-dirs ()
+;;   "Apply .dir-locals.el from current directory up to the root."
+;;   (let ((dir (expand-file-name default-directory)))
+;;     (while (and dir (not (string-equal dir "/")))
+;;       (let ((parent (file-name-directory (directory-file-name dir))))
+;;         (when (and parent (not (equal parent dir)))
+;;           (let ((locals-file (expand-file-name ".dir-locals.el" parent)))
+;;             (when (file-exists-p locals-file)
+;;               (message "Loading dir-locals from: %s" locals-file)
+;;               (load-file locals-file))))
+;;         (setq dir parent)))))
+
+;; ;; Add the custom function to the find-file-hook
+;; (add-hook 'find-file-hook 'apply-dir-locals-from-parent-dirs)
+
+
