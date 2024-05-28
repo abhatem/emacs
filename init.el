@@ -1,4 +1,6 @@
 (setq package-enable-at-startup nil)
+;; compute startup times
+(setq use-package-compute-statistics t)
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -32,6 +34,34 @@
     ;; If there is more than one, they won't work right.
     )
 
+;; use all the icons
+(use-package all-the-icons :straight t :ensure t)
+
+;; disable menu bar and tool bar
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+
+;; for doom themes
+;; (use-package doom-themes
+;;     :straight t
+;;     :ensure t
+;;     :config
+;;     ;; Global settings (defaults)
+;;     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+;;         doom-themes-enable-italic t) ; if nil, italics is universally disabled
+;;     (load-theme 'doom-one t)
+
+;;     ;; Enable flashing mode-line on errors
+;;     (doom-themes-visual-bell-config)
+;;     ;; Enable custom neotree theme (all-the-icons must be installed!)
+;;     (doom-themes-neotree-config)
+;;     ;; or for treemacs users
+;;     ;; (setq doom-themes-treemacs-theme "doom-colors") ; use "doom-colors" for less minimal icon theme
+;;     ;; (doom-themes-treemacs-config)
+;;     ;; Corrects (and improves) org-mode's native fontification.
+;;     (doom-themes-org-config))
+
+;; (load-theme 'doom-material t)
 
 (straight-use-package 'helm)
 (straight-use-package 'helm-xref)
@@ -40,6 +70,7 @@
 (global-set-key (kbd "C-x r b") #'helm-filtered-bookmarks)
 (global-set-key (kbd "C-x C-f") #'helm-find-files)
 (global-set-key (kbd "C-x b") #'helm-buffers-list)
+
 (define-key global-map [remap switch-to-buffer] #'helm-mini)
 (global-set-key (kbd "C-'") #'yas/expand)
 
@@ -57,11 +88,52 @@
 (use-package treemacs-projectile :straight t :ensure t)
 (treemacs-git-mode 'deferred)
 
-(use-package rust-mode :straight t :ensure t)
+;; (use-package rust-mode :straight t :ensure t)
+(use-package rustic
+    :straight t
+    :ensure t
+    :bind (:map rustic-mode-map
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status))
+    :config
+    ;; uncomment for less flashiness
+    ;; (setq lsp-eldoc-hook nil)
+    ;; (setq lsp-enable-symbol-highlighting nil)
+    ;; (setq lsp-signature-auto-activate nil)
+
+    ;; comment to disable rustfmt on save
+    (setq rustic-format-on-save t)
+    (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook)
+    )
+
+(defun rk/rustic-mode-hook ()
+    ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+    ;; save rust buffers that are not file visiting. Once
+    ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+    ;; no longer be necessary.
+    (when buffer-file-name
+	(setq-local buffer-save-without-query t))
+    (add-hook 'before-save-hook 'lsp-format-buffer nil t))
+
+
+
 
 ;; flycheck stuff
 (use-package flycheck :straight t :ensure t
     :init (global-flycheck-mode))
+
+(setq lsp-log-io nil) ;; Don't log everything = speed
+(setq lsp-keymap-prefix "C-c l")
+(setq lsp-restart 'auto-restart)
+(setq lsp-ui-sideline-show-diagnostics t)
+(setq lsp-ui-sideline-show-hover t)
+(setq lsp-ui-sideline-show-code-actions t)
 
 (use-package lsp-mode
     :straight t
@@ -87,21 +159,33 @@
     :commands lsp
     :bind-keymap
     ("C-c l" . lsp-command-map)
+    :config
+    (add-hook 'lsp-mode-hook 'lsp-ui-mode)
     :custom
     (lsp-keymap-prefix "C-c l"))
 
 ;; optionally
-(use-package lsp-ui :straight t :commands lsp-ui-mode)
+(use-package lsp-ui
+    :straight t
+    :ensure
+    :commands lsp-ui-mode
+    :custom
+    (lsp-ui-peek-always-show t)
+    (lsp-ui-sideline-show-hover t)
+    (lsp-ui-doc-enable nil))
+
 ;; if you are helm user
 (use-package helm-lsp :straight t :commands helm-lsp-workspace-symbol)
 ;; (define-key lsp-mode-map [remap xref-find-apropos] #'helm-lsp-workspace-symbol)
+
+(global-set-key (kbd "C-c s") #'helm-lsp-workspace-symbol)
 
 (use-package lsp-pyright
     :straight t
     :ensure t
     :hook (python-mode . (lambda ()
                              (require 'lsp-pyright)
-                          (lsp))))  ; or lsp-deferred
+                             (lsp))))  ; or lsp-deferred
 
 
 ;; ;; if you are ivy user
@@ -237,8 +321,13 @@
     `((".*" "~/.emacs-saves/" t)))
 
 ;; cool dashboard
+;; if command line args < 2 then open dashboard
+;; (if (< (length command-line-args) 2)
+;; 	(setq inhibit-startup-screen t))
+
 (use-package dashboard
     :ensure t
+    :if (< (length command-line-args) 2)
     :config
     (dashboard-setup-startup-hook))
 (setq dashboard-banner-logo-title "abhatem emacs")
@@ -248,16 +337,46 @@
 (setq dashboard-startup-banner "~/emacs/gears-5908_256.gif")
 
 
-(setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name)))
-(setq dashboard-items '((recents   . 5)
-                        (bookmarks . 5)
-                        (projects  . 10)
-                        (agenda    . 5)
+(if (< (length command-line-args) 2)
+    (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name))))
+
+;; (setq dashboard-set-heading-icons t)
+;; (setq dashboard-set-file-icons t)
+(setq dashboard-set-navigator t)
+(setq dashboard-projects-backend 'projectile)
+(setq dashboard-items '(
+                           ;; (bookmarks . 5)
+                           (projects  . 10)
+                           (agenda    . 5)
                            (registers . 5)))
 
 (setq dashboard-display-icons-p t)     ; display icons on both GUI and terminal
 (setq dashboard-icon-type 'nerd-icons) ; use `nerd-icons' package
 
+
+;; react stuff
+(use-package rjsx-mode :straight t :ensure t)
+
+;; typescript stuff
+(use-package typescript-mode :straight t :ensure t)
+
+(use-package json-mode
+    :straight t
+	:ensure t)
+
+
+;; web-mode
+(setq web-mode-markup-indent-offset 2)
+(setq web-mode-code-indent-offset 2)
+(setq web-mode-css-indent-offset 2)
+(use-package web-mode
+  :ensure t
+  :mode (("\\.js\\'" . web-mode)
+	 ("\\.jsx\\'" .  web-mode)
+	 ("\\.ts\\'" . web-mode)
+	 ("\\.tsx\\'" . web-mode)
+	 ("\\.html\\'" . web-mode))
+  :commands web-mode)
 
 
 
@@ -279,6 +398,24 @@
 ;; (use-package all-the-icons
 ;; 	:straight t
 ;; 	:ensure t)
+
+
+;; for editing dir locals using projectile
+ (define-skeleton projectile-skel-dir-locals
+   "Insert a .dir-locals.el template."
+   nil
+   "((nil . ("
+-  ("" '(projectile-skel-variable-cons) \n)
++  ("Value: "
++   "("
++   (let ((var-name (projectile-read-variable)))
++                   (if (string-empty-p var-name)
++                       ; Stop the sub-skeleton iteration on empty variable name.
++                       (signal 'quit t)
++                     var-name))
++   " . " str ")" \n)
+   resume:
+   ")))")
 
 
 ;; golden ratio
